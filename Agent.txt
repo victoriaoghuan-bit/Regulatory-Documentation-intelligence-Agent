@@ -1,0 +1,53 @@
+import streamlit as st
+import anthropic
+
+st.set_page_config(page_title="Regulatory Document Analyser", page_icon="📋")
+
+st.title("📋 Regulatory Documentation Intelligence Agent")
+st.markdown("*Paste a pharmaceutical regulatory document below to extract key obligations and risks*")
+
+api_key = st.text_input("Enter your Anthropic API Key", type="password")
+
+document = st.text_area("Paste Regulatory Document Here", height=300, placeholder="Paste your regulatory submission text here...")
+
+if st.button("Analyse Document"):
+    if not api_key:
+        st.error("Please enter your API key")
+    elif not document:
+        st.error("Please paste a document to analyse")
+    else:
+        with st.spinner("Agent is analysing document..."):
+            client = anthropic.Anthropic(api_key=api_key)
+            message = client.messages.create(
+                model="claude-opus-4-5",
+                max_tokens=1024,
+                messages=[
+                    {
+                        "role": "user",
+                        "content": f"""You are an expert regulatory affairs analyst specialising in pharmaceutical submissions.
+
+Analyse the following regulatory document and provide a structured output with exactly these sections:
+
+📋 DOCUMENT TYPE
+State what type of regulatory document this appears to be.
+
+✅ KEY OBLIGATIONS IDENTIFIED
+List each obligation found, numbered, in plain language a consultant can act on.
+
+⚠️ MISSING SECTIONS FLAGGED
+List any sections that appear to be missing or incomplete based on standard regulatory requirements.
+
+🔴 RISK FLAGS
+Highlight anything that could cause delays or rejection by regulators.
+
+📌 RECOMMENDED ACTIONS
+List the top 3 immediate actions a consultant should take.
+
+Document to analyse:
+{document}"""
+                    }
+                ]
+            )
+            
+            st.success("Analysis Complete")
+            st.markdown(message.content[0].text)
